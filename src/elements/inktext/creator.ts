@@ -9,8 +9,7 @@ import type { CreationContext, CreationResult } from '../registry/ElementPlugin'
 import type { HandwritingRecognitionResult, RecognizedToken } from '../../recognition/RecognitionService';
 import { getRecognitionService } from '../../recognition/RecognitionService';
 import { debugLog } from '../../debug/DebugLogger';
-import { interpretStrokesJSON, hasElementPrompt } from '../../ai/StrokeInterpreter';
-import { isOpenRouterConfigured } from '../../ai/OpenRouterService';
+import { requestInkTextWritingInsight, getRecognitionPlainText } from './writingInsightAnalysis';
 
 // Validation constants
 const MIN_STROKES = 1;
@@ -330,18 +329,6 @@ export async function createFromInk(
     return null;
   }
 
-  // Send strokes to OpenRouter for AI interpretation (fire-and-forget)
-  if (isOpenRouterConfigured() && hasElementPrompt('inktext')) {
-    interpretStrokesJSON(strokes, 'inktext', { temperature: 0.3, maxTokens: 256 })
-      .then((aiResult) => {
-        debugLog.info('InkText: OpenRouter interpretation result', aiResult);
-//        console.log('InkText: AI interpretation result', aiResult);
-      })
-      .catch((err) => {
-        debugLog.warn('InkText: AI interpretation failed', err);
-      });
-  }
-
   // Don't create InkText for single "#" character (TicTacToe)
   if (result.rawText.trim() === '#' || result.rawText.trim() === '＃') {
     debugLog.info('InkText: skipping hash symbol (TicTacToe)');
@@ -373,6 +360,10 @@ export async function createFromInk(
   // Create the element
   const element = createInkTextElement(strokes, result);
   const finalConfidence = Math.min(combinedConfidence, MAX_INKTEXT_CONFIDENCE);
+
+  const plain = getRecognitionPlainText(result);
+  requestInkTextWritingInsight(element.id, strokes, plain);
+  debugLog.info('InkText: scheduled writing insight', { id: element.id.slice(0, 8), plainLength: plain.length });
 
   // If confidence is below the direct-creation threshold but above disambiguation minimum,
   // return the result so it can participate in cross-type disambiguation

@@ -212,3 +212,219 @@
   font-size: 0.8rem;
   color: #666;
 }
+
+/* Writing insights (ink text + OpenRouter) */
+.writing-insights-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 100px));
+  overflow: auto;
+  z-index: 95;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 10px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+  font-size: 0.8rem;
+  color: #333;
+  line-height: 1.45;
+}
+
+.writing-insights-title {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.writing-insights-hint {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  color: #666;
+}
+
+.writing-insights-baseline {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.writing-insights-baseline-title {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.writing-insights-baseline-instruct {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.writing-insights-baseline-phrase {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: #f4f6fa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #222;
+}
+
+.writing-insights-baseline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.writing-insights-baseline-btn {
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.writing-insights-baseline-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.writing-insights-baseline-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.writing-insights-baseline-btn--ghost {
+  background: transparent;
+}
+
+.writing-insights-baseline-stats {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.68rem;
+  color: #666;
+  line-height: 1.45;
+}
+
+.writing-insights-baseline-date {
+  list-style: none;
+  margin-left: -1.1rem;
+  margin-top: 6px;
+  color: #888;
+  font-size: 0.65rem;
+}
+
+.writing-insights-warn {
+  margin: 0 0 10px;
+  padding: 8px;
+  background: #fff8e6;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #664d00;
+}
+
+.writing-insights-warn code {
+  font-size: 0.68rem;
+}
+
+.writing-insights-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.writing-insights-doc {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.writing-insights-doc h3 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.writing-insights-doc p {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.writing-insights-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.writing-insights-card {
+  padding: 10px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.writing-insights-card--selected {
+  border-color: #007aff;
+  background: #f0f7ff;
+}
+
+.writing-insights-card-label {
+  font-size: 0.72rem;
+  color: #888;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.writing-insights-summary {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+}
+
+.writing-insights-pending {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #888;
+  font-style: italic;
+}
+
+.writing-insights-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #b00020;
+}
+
+.writing-insights-meta {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.writing-insights-tags {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: #666;
+}
+
+.writing-insights-note {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: #8a6d3b;
+}
+
+.writing-insights-mood {
+  margin: 6px 0 0;
+  font-size: 0.7rem;
+  color: #777;
+}

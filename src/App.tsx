@@ -35,6 +35,17 @@ import { detectRectangleX, lastRectXRejection, type RectangleXResult } from './g
 import { createPaletteIntent } from './palette';
 import type { PaletteIntent, PaletteAction } from './palette';
 import { Toaster } from './toast/Toast';
+import { setInkTextInsightPatcher } from './state/inkTextInsightBridge';
+import { WritingInsightsPanel } from './components/WritingInsightsPanel';
+import {
+  CALIBRATION_PHRASE,
+  clearWritingBaseline,
+  computeBaselineFromStrokes,
+  loadWritingBaseline,
+  saveWritingBaseline,
+  type WritingBaseline,
+} from './services/writingBaseline';
+import { getInkTextPlainTextFromLines } from './elements/inktext/writingInsightAnalysis';
 import './App.css';
 
 
@@ -102,7 +113,22 @@ function App() {
 
   // Ref to always access the latest note state from async callbacks (avoids stale closures)
   const currentNoteRef = useRef(currentNote);
-  currentNoteRef.current = currentNote;
+  useEffect(() => {
+    currentNoteRef.current = currentNote;
+  });
+
+  useEffect(() => {
+    setInkTextInsightPatcher((elementId, insight) => {
+      const prev = currentNoteRef.current;
+      setCurrentNote({
+        ...prev,
+        elements: prev.elements.map((el) =>
+          el.type === 'inkText' && el.id === elementId ? { ...el, writingInsight: insight } : el,
+        ),
+      });
+    });
+    return () => setInkTextInsightPatcher(null);
+  }, [setCurrentNote]);
 
   // Track pending strokes for element creation (strokes not yet assigned to elements)
   const pendingStrokesRef = useRef<Stroke[]>([]);
@@ -116,6 +142,34 @@ function App() {
 
   // Track selected elements
   const [selectedElementIds, setSelectedElementIds] = useState<Set<string>>(new Set());
+
+  const [writingBaseline, setWritingBaseline] = useState<WritingBaseline | null>(() => loadWritingBaseline());
+
+  const selectedInkTextElement = useMemo(() => {
+    if (selectedElementIds.size !== 1) return null;
+    const id = selectedElementIds.values().next().value as string;
+    const el = currentNote.elements.find((e) => e.id === id);
+    return el?.type === 'inkText' ? el : null;
+  }, [selectedElementIds, currentNote.elements]);
+
+  const handleSetBaselineFromSelection = useCallback(() => {
+    if (!selectedInkTextElement || selectedInkTextElement.sourceStrokes.length === 0) return;
+    const recognized = getInkTextPlainTextFromLines(selectedInkTextElement);
+    const next = computeBaselineFromStrokes(
+      selectedInkTextElement.sourceStrokes,
+      CALIBRATION_PHRASE,
+      recognized,
+    );
+    saveWritingBaseline(next);
+    setWritingBaseline(next);
+    debugLog.action('Writing baseline saved', { strokes: next.metrics.strokeCount });
+  }, [selectedInkTextElement]);
+
+  const handleClearBaseline = useCallback(() => {
+    clearWritingBaseline();
+    setWritingBaseline(null);
+    debugLog.action('Writing baseline cleared');
+  }, []);
 
   // Track lasso selection intent (pending lasso selection with menu)
   const [selectionIntent, setSelectionIntent] = useState<SelectionIntent | null>(null);
@@ -1045,6 +1099,16 @@ function App() {
           strokesToClearFromOverlay={strokesToClearFromOverlay}
         />
       </div>
+
+      <WritingInsightsPanel
+        elements={currentNote.elements}
+        selectedIds={selectedElementIds}
+        baseline={writingBaseline}
+        calibrationPhrase={CALIBRATION_PHRASE}
+        canSetBaselineFromSelection={!!selectedInkTextElement}
+        onSetBaselineFromSelection={handleSetBaselineFromSelection}
+        onClearBaseline={handleClearBaseline}
+      />
 
       <header className="toolbar">
         <h1>Ink Playground</h1>

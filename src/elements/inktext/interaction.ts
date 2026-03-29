@@ -8,6 +8,7 @@ import type { InteractionResult } from '../registry/ElementPlugin';
 import { getStrokesBoundingBox } from '../registry/ElementRegistry';
 import type { HandwritingRecognitionResult, RecognizedToken } from '../../recognition/RecognitionService';
 import { getRecognitionService } from '../../recognition/RecognitionService';
+import { requestInkTextWritingInsight, getInkTextPlainTextFromLines } from './writingInsightAnalysis';
 
 // How close strokes need to be to be considered part of the same text
 const PROXIMITY_THRESHOLD = 100; // pixels
@@ -326,6 +327,10 @@ export async function acceptInk(
 
   // Merge the new strokes and recognition into the element
   const newElement = mergeRecognitionResult(element, strokes, result);
+  const plain = getInkTextPlainTextFromLines(newElement);
+  if (plain) {
+    requestInkTextWritingInsight(newElement.id, newElement.sourceStrokes, plain);
+  }
 
   return {
     element: newElement,
