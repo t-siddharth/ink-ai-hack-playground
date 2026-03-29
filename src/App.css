@@ -145,6 +145,44 @@
   white-space: nowrap;
 }
 
+/* Calibration mode banner */
+.calibration-banner {
+  position: fixed;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3498db;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 4px 16px rgba(52, 152, 219, 0.4);
+  z-index: 8000;
+}
+
+.calibration-banner em {
+  font-style: italic;
+}
+
+.calibration-banner button {
+  background: #fff;
+  color: #3498db;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.calibration-banner button:hover {
+  background: #ecf0f1;
+}
+
 /* Tool buttons in toolbar */
 .tool-buttons {
   display: flex;

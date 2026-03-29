@@ -35,6 +35,19 @@ import { detectRectangleX, lastRectXRejection, type RectangleXResult } from './g
 import { createPaletteIntent } from './palette';
 import type { PaletteIntent, PaletteAction } from './palette';
 import { Toaster } from './toast/Toast';
+import { EmotionToast } from './analysis/EmotionToast';
+import { CalibrationModal } from './analysis/CalibrationModal';
+import { extractFeatures as extractHandwritingFeatures } from './analysis/StrokeFeatureExtractor';
+import { classify } from './analysis/EmotionClassifier';
+import { recordAssessment, clearSessionHistory } from './analysis/EmotionHistory';
+import {
+  loadBaseline,
+  hasBaseline,
+  computeBaseline,
+  saveBaseline,
+  CALIBRATION_PROMPT,
+} from './analysis/BaselineCalibrator';
+import type { EmotionAssessment } from './analysis/types';
 import './App.css';
 
 
@@ -227,6 +240,18 @@ function App() {
 
   const [showDebug, setShowDebug] = useState(false);
   const [currentTool, setCurrentTool] = useState<Tool>('pen');
+
+  // ── Emotion analysis state ──────────────────────────────────────────────
+  const [emotionAssessment, setEmotionAssessment] = useState<EmotionAssessment | null>(null);
+  const [emotionToastVisible, setEmotionToastVisible] = useState(false);
+  const [showCalibration, setShowCalibration] = useState(!hasBaseline());
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const isCalibratingRef = useRef(false);
+  // Keep isCalibratingRef in sync with isCalibrating state (ref is safe to read in callbacks)
+  useEffect(() => { isCalibratingRef.current = isCalibrating; }, [isCalibrating]);
+  const calibrationStrokesRef = useRef<Stroke[]>([]);
+  // Rolling buffer — last 10 completed strokes for emotion analysis
+  const emotionStrokeBufferRef = useRef<Stroke[]>([]);
   const [brushColor, setBrushColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(3);
 
@@ -382,8 +407,28 @@ function App() {
     setPaletteIntent(null); // Clear palette intent
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(VIEWPORT_STORAGE_KEY);
+    clearSessionHistory();
+    setEmotionAssessment(null);
+    setEmotionToastVisible(false);
+    emotionStrokeBufferRef.current = [];
     debugLog.action('Created new note');
   }, [resetNote]);
+
+  const handleStartCalibration = useCallback(() => {
+    calibrationStrokesRef.current = [];
+    setIsCalibrating(true);
+    setShowCalibration(false);
+  }, []);
+
+  const handleFinishCalibration = useCallback(() => {
+    const strokes = calibrationStrokesRef.current;
+    if (strokes.length > 0) {
+      const profile = computeBaseline(strokes);
+      saveBaseline(profile);
+    }
+    calibrationStrokesRef.current = [];
+    setIsCalibrating(false);
+  }, []);
 
   /*
    * TODO: Uses screen coordinates, not canvas coordinates. When the viewport
@@ -705,6 +750,15 @@ function App() {
       return;
     }
 
+    // Accumulate stroke into emotion rolling buffer (last 10 strokes)
+    const emoBuffer = [...emotionStrokeBufferRef.current, stroke];
+    emotionStrokeBufferRef.current = emoBuffer.slice(-10);
+
+    // If calibrating, also collect into calibration buffer
+    if (isCalibratingRef.current) {
+      calibrationStrokesRef.current = [...calibrationStrokesRef.current, stroke];
+    }
+
     // Add stroke to buffer
     strokeBufferRef.current = [...strokeBufferRef.current, stroke];
 
@@ -811,6 +865,17 @@ function App() {
       }
 
       processStrokes(strokesToProcess);
+
+      // Run rolling emotion analysis on the last 10 strokes
+      const rollingStrokes = emotionStrokeBufferRef.current;
+      if (rollingStrokes.length >= 1) {
+        const baseline = loadBaseline();
+        const features = extractHandwritingFeatures(rollingStrokes, baseline.capturedAt > 0 ? baseline : undefined);
+        const assessment = classify(features);
+        recordAssessment(assessment);
+        setEmotionAssessment(assessment);
+        setEmotionToastVisible(true);
+      }
     }, STROKE_DEBOUNCE_MS);
   }, [processStrokes, setCurrentNote]);
 
@@ -1147,6 +1212,41 @@ function App() {
               <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>
             </svg>
           </button>
+          {isCalibrating && (
+            <button
+              className="active"
+              onClick={handleFinishCalibration}
+              title="Finish calibration — saves your baseline"
+              style={{ color: '#3498db' }}
+            >
+              Done
+            </button>
+          )}
+          {!isCalibrating && (
+            <button
+              onClick={() => setShowCalibration(true)}
+              title="Emotion settings & recalibrate baseline"
+            >
+              {/* Settings gear icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          )}
+          {!isCalibrating && emotionAssessment && (
+            <button
+              onClick={() => setEmotionToastVisible(v => !v)}
+              title="Analyse mood"
+              className={emotionToastVisible ? 'active' : ''}
+            >
+              {/* Brain/mood icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.66"/>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.66"/>
+              </svg>
+            </button>
+          )}
           <button
             className={showDebug ? 'active' : ''}
             onClick={() => setShowDebug(d => !d)}
@@ -1246,6 +1346,28 @@ function App() {
       )}
 
       <Toaster />
+
+      <EmotionToast
+        assessment={emotionAssessment}
+        visible={emotionToastVisible}
+        onDismiss={() => setEmotionToastVisible(false)}
+      />
+
+      {showCalibration && (
+        <CalibrationModal
+          isFirstLaunch={!hasBaseline()}
+          onStartCalibration={handleStartCalibration}
+          onDismiss={() => setShowCalibration(false)}
+        />
+      )}
+
+      {isCalibrating && (
+        <div className="calibration-banner">
+          <span>✍️ Write naturally: <em>{CALIBRATION_PROMPT.replace('Write this sentence naturally: ', '')}</em></span>
+          <button onClick={handleFinishCalibration}>Done</button>
+        </div>
+      )}
+
       <footer className="status-bar">
         <span>Elements: {currentNote.elements.length}</span>
         <span>|</span>
