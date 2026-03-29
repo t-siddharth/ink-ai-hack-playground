@@ -1,0 +1,282 @@
+.emotion-toast {
+  position: fixed;
+  bottom: 56px;
+  right: 16px;
+  width: 260px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  z-index: 9000;
+  overflow: hidden;
+  animation: emotion-slide-in 0.3s ease-out;
+}
+
+@keyframes emotion-slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.emotion-toast-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 8px 12px;
+  border-left: 4px solid #ccc;
+  background: #fafafa;
+}
+
+.emotion-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.emotion-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.emotion-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.emotion-secondary {
+  font-size: 12px;
+  color: #888;
+}
+
+.emotion-confidence-bar {
+  height: 3px;
+  background: #eee;
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.emotion-confidence-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.emotion-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.emotion-close:hover {
+  color: #555;
+  background: #eee;
+}
+
+/* ── Signals ─────────────────────────────────────────── */
+.emotion-signals {
+  margin: 0;
+  padding: 6px 12px 6px 24px;
+  list-style: disc;
+  color: #555;
+  font-size: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.emotion-signals li {
+  margin-bottom: 2px;
+}
+
+/* ── Anxiety Prompt ──────────────────────────────────── */
+.emotion-anxiety-prompt {
+  padding: 8px 12px;
+  background: #f9f0ff;
+  border-top: 1px solid #e8d5f5;
+  font-size: 12px;
+  color: #6c3483;
+}
+
+.emotion-anxiety-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.emotion-btn {
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  color: #444;
+  transition: background 0.15s;
+}
+
+.emotion-btn:hover {
+  background: #f4f4f4;
+}
+
+.emotion-btn-primary {
+  background: #9b59b6;
+  color: #fff;
+  border-color: #9b59b6;
+}
+
+.emotion-btn-primary:hover {
+  background: #8e44ad;
+  border-color: #8e44ad;
+}
+
+.emotion-btn-export {
+  font-size: 11px;
+  padding: 3px 8px;
+  color: #777;
+}
+
+/* ── Feedback ────────────────────────────────────────── */
+.emotion-feedback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 8px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.emotion-feedback-label {
+  font-size: 11px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.emotion-feedback-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.emotion-feedback-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 2px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: transform 0.1s;
+}
+
+.emotion-feedback-btn:hover {
+  transform: scale(1.25);
+}
+
+.emotion-feedback-thanks {
+  font-size: 11px;
+  color: #27ae60;
+  font-style: italic;
+}
+
+/* ── Breathing Modal ─────────────────────────────────── */
+.breathing-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.breathing-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 40px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  min-width: 260px;
+  animation: modal-pop 0.25s ease;
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.breathing-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 16px;
+}
+
+.breathing-close:hover { color: #555; }
+
+.breathing-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: #333;
+}
+
+.breathing-subtitle {
+  font-size: 12px;
+  color: #999;
+  margin: 0 0 20px;
+}
+
+.breathing-ring-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 128px;
+}
+
+.breathing-label {
+  position: absolute;
+  font-size: 16px;
+  font-weight: 600;
+  color: #9b59b6;
+}
+
+.breathing-duration {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.breathing-done {
+  padding: 8px 0;
+}
+
+.breathing-done-icon {
+  font-size: 48px;
+  color: #27ae60;
+  margin-bottom: 12px;
+}
+
+.breathing-done p {
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
