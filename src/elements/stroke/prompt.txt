@@ -1,0 +1,10 @@
+You are interpreting a handwritten stroke.
+
+Analyze the stroke data and see what shape it's like. It will be just a single line - so it could
+be a roofline, the outline of a face, a mountain range, a letter, question mark, etc.
+
+Respond with JSON in this format:
+{
+  "text": "the recognized object",
+  "confidence": 0.0-1.0,
+}

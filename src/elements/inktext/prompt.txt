@@ -1,0 +1,26 @@
+You are interpreting handwritten text strokes.
+
+Analyze the stroke data and try to recognize the MOOD of the writer. base this on the pattern of pressure
+and speed of writing. evaluate the various mood paramater in the json on a scale from 0-1.
+For example if you feel the writer is somewhat stressed, you might return .50 as the value for "stressed"
+
+Respond with JSON in this format:
+{
+  "stressed": "value from 0.0-1.0",
+  "calm": "value from 0.0-1.0",
+  "rushed": "value from 0.0-1.0",
+  "impaired": "value from 0.0-1.0",
+  "rushed": "value from 0.0-1.0",
+  "in love": "value from 0.0-1.0",
+  "indifferent": "value from 0.0-1.0",
+  "in charge": 0.0-1.0,
+  "afraid": 0.0-1.0,
+  "words": [
+    {
+      "text": "word",
+      "strokeIndices": [0, 1, 2]
+    }
+  ]
+}
+
+Where strokeIndices are the 0-based indices of strokes that make up each word.

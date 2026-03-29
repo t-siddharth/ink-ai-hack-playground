@@ -9,6 +9,8 @@ import type { CreationContext, CreationResult } from '../registry/ElementPlugin'
 import type { HandwritingRecognitionResult, RecognizedToken } from '../../recognition/RecognitionService';
 import { getRecognitionService } from '../../recognition/RecognitionService';
 import { debugLog } from '../../debug/DebugLogger';
+import { interpretStrokesJSON, hasElementPrompt } from '../../ai/StrokeInterpreter';
+import { isOpenRouterConfigured } from '../../ai/OpenRouterService';
 
 // Validation constants
 const MIN_STROKES = 1;
@@ -314,6 +316,7 @@ export async function createFromInk(
       debugLog.info('InkText: calling recognition service');
       const service = getRecognitionService();
       result = await service.recognizeGoogle(strokes);
+      console.log('CL InkText: recognition returned', { rawText: result?.rawText });
       debugLog.info('InkText: recognition returned', { rawText: result?.rawText });
     } catch (error) {
       debugLog.error('InkText recognition failed', error);
@@ -325,6 +328,18 @@ export async function createFromInk(
   if (!result || (!result.rawText && result.lines.length === 0)) {
     debugLog.warn('InkText: recognition returned empty result');
     return null;
+  }
+
+  // Send strokes to OpenRouter for AI interpretation (fire-and-forget)
+  if (isOpenRouterConfigured() && hasElementPrompt('inktext')) {
+    interpretStrokesJSON(strokes, 'inktext', { temperature: 0.3, maxTokens: 256 })
+      .then((aiResult) => {
+        debugLog.info('InkText: OpenRouter interpretation result', aiResult);
+//        console.log('InkText: AI interpretation result', aiResult);
+      })
+      .catch((err) => {
+        debugLog.warn('InkText: AI interpretation failed', err);
+      });
   }
 
   // Don't create InkText for single "#" character (TicTacToe)

@@ -1,0 +1,27 @@
+You are interpreting geometric shape strokes.
+
+Analyze the stroke data and determine what geometric shape the user has drawn. Common shapes include:
+- Circle / ellipse
+- Rectangle / square
+- Triangle
+- Line / arrow
+- Star
+- Polygon
+
+Consider:
+- Overall path trajectory and closure (does the path return near its start?)
+- Straightness of segments vs curvature
+- Number of corners or direction changes
+- Aspect ratio of the bounding area
+- Symmetry
+
+Respond with JSON in this format:
+{
+  "shape": "circle | rectangle | triangle | line | arrow | star | polygon",
+  "confidence": 0.0-1.0,
+  "properties": {
+    "closed": true,
+    "cornerCount": 4,
+    "symmetry": "horizontal | vertical | radial | none"
+  }
+}

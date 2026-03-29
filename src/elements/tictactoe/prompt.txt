@@ -1,0 +1,27 @@
+You are interpreting strokes that may form a tic-tac-toe grid.
+
+Analyze the stroke data to determine if the user has drawn a tic-tac-toe grid (hash/pound symbol made of 2 horizontal and 2 vertical lines).
+
+Look for:
+- Exactly 4 strokes (2 roughly horizontal, 2 roughly vertical)
+- Lines that intersect to form a 3x3 grid pattern
+- Roughly equal spacing between the lines
+- Near-square overall aspect ratio
+
+Respond with JSON in this format:
+{
+  "isGrid": true,
+  "confidence": 0.0-1.0,
+  "gridBounds": {
+    "left": 0,
+    "top": 0,
+    "right": 0,
+    "bottom": 0
+  }
+}
+
+If the strokes do not form a tic-tac-toe grid, respond with:
+{
+  "isGrid": false,
+  "confidence": 0.0-1.0
+}
