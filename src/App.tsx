@@ -48,6 +48,7 @@ import {
   CALIBRATION_PROMPT,
 } from './analysis/BaselineCalibrator';
 import type { EmotionAssessment } from './analysis/types';
+import { AnalysisMenu } from './analysis/AnalysisMenu';
 import './App.css';
 
 
@@ -250,6 +251,10 @@ function App() {
   // Keep isCalibratingRef in sync with isCalibrating state (ref is safe to read in callbacks)
   useEffect(() => { isCalibratingRef.current = isCalibrating; }, [isCalibrating]);
   const calibrationStrokesRef = useRef<Stroke[]>([]);
+  // Whether emotion analysis is currently enabled (user-controlled via AnalysisMenu)
+  const [isAssessmentActive, setIsAssessmentActive] = useState(true);
+  const isAssessmentActiveRef = useRef(true);
+  useEffect(() => { isAssessmentActiveRef.current = isAssessmentActive; }, [isAssessmentActive]);
   // Rolling buffer — last 10 completed strokes for emotion analysis
   const emotionStrokeBufferRef = useRef<Stroke[]>([]);
   const [brushColor, setBrushColor] = useState('#000000');
@@ -866,9 +871,9 @@ function App() {
 
       processStrokes(strokesToProcess);
 
-      // Run rolling emotion analysis on the last 10 strokes
+      // Run rolling emotion analysis on the last 10 strokes — skip during calibration or when paused
       const rollingStrokes = emotionStrokeBufferRef.current;
-      if (rollingStrokes.length >= 1) {
+      if (!isCalibratingRef.current && isAssessmentActiveRef.current && rollingStrokes.length >= 1) {
         const baseline = loadBaseline();
         const features = extractHandwritingFeatures(rollingStrokes, baseline.capturedAt > 0 ? baseline : undefined);
         const assessment = classify(features);
@@ -1222,18 +1227,6 @@ function App() {
               Done
             </button>
           )}
-          {!isCalibrating && (
-            <button
-              onClick={() => setShowCalibration(true)}
-              title="Emotion settings & recalibrate baseline"
-            >
-              {/* Settings gear icon */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-          )}
           {!isCalibrating && emotionAssessment && (
             <button
               onClick={() => setEmotionToastVisible(v => !v)}
@@ -1367,6 +1360,15 @@ function App() {
           <button onClick={handleFinishCalibration}>Done</button>
         </div>
       )}
+
+      <AnalysisMenu
+        isCalibrating={isCalibrating}
+        isAssessmentActive={isAssessmentActive}
+        onStartBaseline={() => setShowCalibration(true)}
+        onFinishBaseline={handleFinishCalibration}
+        onStartAssessment={() => setIsAssessmentActive(true)}
+        onStopAssessment={() => setIsAssessmentActive(false)}
+      />
 
       <footer className="status-bar">
         <span>Elements: {currentNote.elements.length}</span>
