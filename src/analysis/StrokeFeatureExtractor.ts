@@ -7,7 +7,7 @@ import type {
   BaselineProfile,
 } from './types';
 
-const PAUSE_THRESHOLD_MS = 200; // gap between strokes counted as a pause
+const PAUSE_THRESHOLD_MS = 450; // gap between strokes counted as a pause (150–300ms is normal inter-letter transition)
 const DIRECTION_CHANGE_ANGLE_DEG = 30; // minimum angle (degrees) to count as a direction change
 const HARD_PRESSURE_THRESHOLD = 0.7;
 const REAL_PRESSURE_VARIANCE_MIN = 0.001; // if variance is below this, pressure is probably synthetic
@@ -123,6 +123,18 @@ function extractSpeedFeatures(strokes: Stroke[]): SpeedFeatures {
     : 0;
   const meanPauseDuration = pauses.length > 0 ? pauses.reduce((a, b) => a + b, 0) / pauses.length : 0;
 
+  // Velocity reversals: number of times speed crosses the mean per stroke.
+  // Calm strokes have a smooth bell-curve speed profile (~2 crossings); jerky/anxious strokes
+  // oscillate frequently. Normalise by stroke count for a per-stroke rate.
+  let rawReversals = 0;
+  if (allSpeeds.length > 1) {
+    const aboveMean = allSpeeds.map(v => v >= meanSpeed);
+    for (let i = 1; i < aboveMean.length; i++) {
+      if (aboveMean[i] !== aboveMean[i - 1]) rawReversals++;
+    }
+  }
+  const velocityReversals = strokes.length > 0 ? rawReversals / strokes.length : 0;
+
   return {
     mean: meanSpeed,
     variance: speedVariance,
@@ -130,6 +142,7 @@ function extractSpeedFeatures(strokes: Stroke[]): SpeedFeatures {
     pauseCount: pauses.length,
     meanPauseDuration,
     meanAcceleration,
+    velocityReversals,
   };
 }
 
@@ -216,6 +229,10 @@ function extractRhythmFeatures(strokes: Stroke[]): RhythmFeatures {
  */
 function applyBaseline(features: HandwritingFeatures, baseline: BaselineProfile): HandwritingFeatures {
   const pressureShift = features.pressure.mean - baseline.meanPressure;
+  // speedRatio = how fast the user is writing relative to their own baseline.
+  // We re-anchor to 0.8 px/ms (the neutral midpoint of S_SLOW..S_FAST) so classifier
+  // thresholds have consistent meaning regardless of the user's absolute writing speed.
+  // e.g. writing at 2× baseline → 1.6 (above S_FAST); at 0.5× baseline → 0.4 (at S_SLOW).
   const speedRatio = baseline.meanSpeed > 0 ? features.speed.mean / baseline.meanSpeed : 1;
 
   return {
@@ -226,7 +243,7 @@ function applyBaseline(features: HandwritingFeatures, baseline: BaselineProfile)
     },
     speed: {
       ...features.speed,
-      mean: features.speed.mean * (1 / speedRatio), // normalised speed
+      mean: speedRatio * 0.8, // normalised: at-baseline = 0.8, 2× baseline = 1.6, 0.5× = 0.4
     },
   };
 }
@@ -235,7 +252,7 @@ export function extractFeatures(strokes: Stroke[], baseline?: BaselineProfile): 
   if (strokes.length === 0) {
     return {
       pressure: { mean: 0.5, variance: 0, range: 0, trend: 0, hardRatio: 0 },
-      speed: { mean: 0, variance: 0, peak: 0, pauseCount: 0, meanPauseDuration: 0, meanAcceleration: 0 },
+      speed: { mean: 0, variance: 0, peak: 0, pauseCount: 0, meanPauseDuration: 0, meanAcceleration: 0, velocityReversals: 0 },
       rhythm: { strokeCount: 0, meanStrokeLength: 0, interStrokeInterval: 0, directionChangeRate: 0, strokeCoverage: 0 },
       sampleCount: 0,
       durationMs: 0,

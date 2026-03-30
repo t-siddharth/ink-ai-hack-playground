@@ -43,9 +43,10 @@ export interface SpeedFeatures {
   mean: number;           // px/ms average speed
   variance: number;       // statistical variance of speed
   peak: number;           // maximum speed observed (px/ms)
-  pauseCount: number;     // inter-stroke gaps > 200ms
+  pauseCount: number;     // inter-stroke gaps > PAUSE_THRESHOLD_MS
   meanPauseDuration: number; // average pause length in ms
   meanAcceleration: number;  // average |Δspeed| / Δtime (px/ms²)
+  velocityReversals: number; // speed-crosses-mean count per stroke (proxy for normalized jerk)
 }
 
 export interface RhythmFeatures {

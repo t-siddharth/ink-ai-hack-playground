@@ -18,6 +18,9 @@ const PAUSE_MANY = 4;
 const DIR_SMOOTH = 0.8;   // changes per 100px
 const DIR_JAGGED = 2.5;
 const ACCEL_HIGH = 0.015;
+// Velocity reversals per stroke (speed-crosses-mean rate).
+// Calm strokes produce ~2 crossings; anxious/stressed writing oscillates at 8+.
+const V_REV_HIGH = 8;
 
 interface ScoredEmotion {
   label: EmotionLabel;
@@ -49,12 +52,15 @@ function scoreStressed(
   let score = 0;
   const signals: string[] = [];
 
-  if (p.mean > P_HIGH) { score += 2; signals.push('heavy pressure'); }
+  // Require notably elevated pressure (raised threshold vs P_HIGH) to avoid normal writing triggering this
+  if (p.mean > 0.65) { score += 2; signals.push('heavy pressure'); }
   if (p.hardRatio > 0.3) { score += 1; signals.push('forceful strokes'); }
-  if (s.mean > S_FAST) { score += 2; signals.push('fast writing pace'); }
+  // Fast pace alone is common; reduce weight to 1
+  if (s.mean > S_FAST) { score += 1; signals.push('fast writing pace'); }
   if (s.meanAcceleration > ACCEL_HIGH) { score += 1; signals.push('erratic speed changes'); }
   if (r.directionChangeRate > DIR_JAGGED) { score += 2; signals.push('jagged strokes'); }
-  if (r.pauseCount < PAUSE_FEW) { score += 1; signals.push('continuous writing'); }
+  if (s.velocityReversals > V_REV_HIGH) { score += 1; signals.push('jerky pen movement'); }
+  // Few pauses indicates flow/excitement, not stress — removed
 
   return { label: EmotionLabel.STRESSED, score, signals };
 }
@@ -72,7 +78,7 @@ function scoreFocused(
   if (s.mean >= S_SLOW && s.mean <= S_FAST) { score += 1; signals.push('measured pace'); }
   if (s.variance < S_VAR_HIGH * 0.5) { score += 2; signals.push('steady speed'); }
   if (r.directionChangeRate < DIR_SMOOTH) { score += 1; signals.push('smooth strokes'); }
-  if (r.pauseCount < PAUSE_MANY) { score += 1; signals.push('minimal hesitation'); }
+  if (s.pauseCount < PAUSE_MANY) { score += 1; signals.push('minimal hesitation'); }
 
   return { label: EmotionLabel.FOCUSED, score, signals };
 }
@@ -87,7 +93,7 @@ function scoreExcited(
 
   if (p.mean < P_HIGH && p.mean > P_LOW) { score += 1; signals.push('light-to-moderate pressure'); }
   if (s.mean > S_FAST) { score += 3; signals.push('fast, energetic writing'); }
-  if (r.pauseCount < PAUSE_FEW) { score += 2; signals.push('flowing, uninterrupted strokes'); }
+  if (s.pauseCount < PAUSE_FEW) { score += 2; signals.push('flowing, uninterrupted strokes'); }
   if (r.directionChangeRate < DIR_JAGGED) { score += 1; signals.push('expressive strokes'); }
   if (r.strokeCoverage > 5000) { score += 1; signals.push('expansive writing'); }
 
@@ -104,7 +110,7 @@ function scoreSad(
 
   if (p.mean < P_LOW) { score += 2; signals.push('very light pressure'); }
   if (s.mean < S_SLOW) { score += 2; signals.push('slow writing pace'); }
-  if (r.pauseCount > PAUSE_MANY) { score += 2; signals.push('frequent pauses'); }
+  if (s.pauseCount > PAUSE_MANY) { score += 2; signals.push('frequent pauses'); }
   if (r.interStrokeInterval > 800) { score += 1; signals.push('long gaps between strokes'); }
   if (p.trend < -0.001) { score += 1; signals.push('pressure trailing off'); }
 
@@ -121,9 +127,12 @@ function scoreAnxious(
 
   if (p.variance > P_VAR_HIGH) { score += 2; signals.push('uneven pressure'); }
   if (s.variance > S_VAR_HIGH) { score += 2; signals.push('inconsistent speed'); }
-  if (r.pauseCount > PAUSE_MANY) { score += 2; signals.push('frequent hesitations'); }
+  if (s.pauseCount > PAUSE_MANY) { score += 2; signals.push('frequent hesitations'); }
   if (r.directionChangeRate > DIR_JAGGED) { score += 1; signals.push('shaky strokes'); }
   if (s.meanAcceleration > ACCEL_HIGH) { score += 1; signals.push('stop-start rhythm'); }
+  if (s.velocityReversals > V_REV_HIGH) { score += 2; signals.push('erratic pen movement'); }
+  // Interaction bonus: pressure AND speed irregularity co-occurring is more diagnostic than either alone
+  if (p.variance > P_VAR_HIGH && s.variance > S_VAR_HIGH) { score += 2; signals.push('combined pressure and speed irregularity'); }
 
   return { label: EmotionLabel.ANXIOUS, score, signals };
 }
